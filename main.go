@@ -20,10 +20,27 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"strconv"
 )
 
+var windows bool
+var maxpath int
+
+func Max(x, y int) int {
+    if x > y {
+        return x
+    }
+    return y
+}
+
 func main() {
+
+	if runtime.GOOS == "windows" {
+	    log.Println("This tool is running in Windows")
+	}
+
 	path := "."
 	if len(os.Args) > 1 {
 		path = os.Args[1]
@@ -37,14 +54,18 @@ func main() {
 		log.Fatal(err)
 	}
 	fmt.Printf("\n%v directories, %v files\n", dirs, files)
+	fmt.Printf("%v max path length, %v windows limit\n", maxpath, 260)	
 }
 
 func visit(path, indent string) (dirs, files int, err error) {
+
+	maxpath = Max(maxpath, len(path))
+
 	fi, err := os.Stat(path)
 	if err != nil {
 		return 0, 0, fmt.Errorf("stat %s: %v", path, err)
 	}
-	fmt.Println(fi.Name())
+	fmt.Println(fi.Name(), "[Path Length: " + strconv.Itoa(len(path)) + "]")
 	if !fi.IsDir() {
 		return 0, 1, nil
 	}
@@ -59,13 +80,13 @@ func visit(path, indent string) (dirs, files int, err error) {
 		return 1, 0, fmt.Errorf("read dir names %s: %v", path, err)
 	}
 	sort.Strings(names)
-	add := "│   "
+	add := "│  "
 	for i, name := range names {
-		if i == len(names)-1 {
-			fmt.Printf(indent + "└── ")
-			add = "    "
+		if i == len(names)-1 {    
+			fmt.Printf(indent + "└──")
+			add = "   "
 		} else {
-			fmt.Printf(indent + "├── ")
+			fmt.Printf(indent + "├──")
 		}
 		d, f, err := visit(filepath.Join(path, name), indent+add)
 		if err != nil {
